@@ -3,6 +3,7 @@
 // label processes
 // - send commands to those processes
 // - mute/unmute those processes
+// - have a command to mute everything and display current state of processes
 
 // have outputs of process go through channel
 
@@ -82,35 +83,27 @@ func exe_cmd(cmd, identifier string) chan string {
 	c := make(chan string)
 
 	parts := strings.Fields(cmd)
-	head := parts[0]
-	parts = parts[1:len(parts)]
 
 	go func() {
-		if head == "cd" {
-			os.Chdir(parts[0])
+		if len(parts) == 0 {
+			fmt.Println(prompt())
+		} else if parts[0] == "cd" {
+			os.Chdir(parts[1])
 
 			c <- fmt.Sprintln()
-		} else if head == "send" {
-			process_identifier := parts[0]
-			cmd := strings.Join(parts[1:], " ")
+		} else if parts[0] == "send" {
+			process_identifier := parts[1]
+			cmd := strings.Join(parts[2:], " ")
 			send_input_to(process_identifier, cmd)
 		} else {
 			// right now, output does not go into the channel;
 			// it prints directly to the stdout.  find a way to
 			// send it into the channel.
-			cmd := exec.Command(head, parts...)
+			cmd := exec.Command(parts[0], parts[1:]...)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stdout
 			cmd.Run()
 			c <- fmt.Sprintln()
-
-			go func() {
-				var input string
-				for {
-					input = <-c
-					run_cmd(input)
-				}
-			}()
 		}
 		// listen for additional commands to this process
 		// delete the process after it is complete
@@ -124,9 +117,7 @@ func exe_cmd(cmd, identifier string) chan string {
 // like 'cd' or 'send'
 func run_cmd(command string) {
 	parts := strings.Fields(command)
-	head := parts[0]
-	parts = parts[1:len(parts)]
-	cmd := exec.Command(head, parts...)
+	cmd := exec.Command(parts[0], parts[1:])
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	cmd.Run()
