@@ -29,8 +29,8 @@ func main() {
 				os.Chdir(parts[1])
 				printPrompt()
 			} else if head == "send" { // send input to pre-existing process
-				argString := strings.Join(parts[2:], " ")
-				ProcessManager.SendInput(parts[1], argString)
+				input = fmt.Sprintf("%s\n", strings.Join(parts[2:], " "))
+				ProcessManager.SendInput(parts[1], input)
 			} else { // regular command
 				runCommand(input)
 			}

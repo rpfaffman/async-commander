@@ -1,7 +1,3 @@
-// & ampersand creates a point to the object immediately after it
-// * indicates that the argument is of type pointer.  dereferences a pointer
-// pointers can be nil
-
 package process
 
 import (
@@ -15,18 +11,18 @@ import (
 
 // ===PROCESS MANAGER CLASS===
 type ProcessManager struct {
-	processes map[string]Process
+	processes map[string]*Process
 }
 
 func NewProcessManager() *ProcessManager {
 	return &ProcessManager{
-		processes: make(map[string]Process),
+		processes: make(map[string]*Process),
 	}
 }
 
-func (pm *ProcessManager) Spawn(command string) Process {
+func (pm *ProcessManager) Spawn(command string) *Process {
 	identifier := strconv.Itoa(len(pm.processes) + 1)
-	process := Process{
+	process := &Process{
 		identifier: identifier,
 		command:    command,
 		manager:    pm,
@@ -42,7 +38,7 @@ func (pm *ProcessManager) Remove(identifier string) {
 	delete(pm.processes, identifier)
 }
 
-func (pm *ProcessManager) List() map[string]Process {
+func (pm *ProcessManager) List() map[string]*Process {
 	return pm.processes
 }
 
@@ -58,10 +54,14 @@ type Process struct {
 	manager    *ProcessManager
 }
 
-func (p Process) Execute() {
+func (p *Process) Execute() {
 	parts := strings.Fields(p.command)
 	cmd := exec.Command(parts[0], parts[1:]...)
-	p.inputPipe, _ = cmd.StdinPipe()
+	var err error
+	p.inputPipe, err = cmd.StdinPipe()
+	if err != nil {
+		fmt.Println(err)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -72,14 +72,14 @@ func (p Process) Execute() {
 	}()
 }
 
-// need to implement
-func (p Process) Input(input string) {
-	fmt.Printf("Received input for %s: %s\n", p.identifier, input)
-	parsedInput := []byte(input)
-	p.inputPipe.Write(parsedInput)
+func (p *Process) Input(input string) {
+	_, err := p.inputPipe.Write([]byte(input))
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
-func (p Process) finish() {
+func (p *Process) finish() {
 	p.manager.Remove(p.identifier)
-	fmt.Printf("Process %s finished.\n", p.identifier)
+	fmt.Printf("\nProcess %s finished.\n> ", p.identifier)
 }
