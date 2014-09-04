@@ -43,7 +43,11 @@ func (pm *ProcessManager) List() map[string]*Process {
 }
 
 func (pm *ProcessManager) SendInput(identifier string, command string) {
-	pm.processes[identifier].Input(command)
+	pm.processes[identifier].Input(fmt.Sprintf("%s\n", command))
+}
+
+func (pm *ProcessManager) RetrieveProcess(identifier string) *Process {
+	return pm.processes[identifier]
 }
 
 // ===PROCESS CLASS===
@@ -82,4 +86,12 @@ func (p *Process) Input(input string) {
 func (p *Process) finish() {
 	p.manager.Remove(p.identifier)
 	fmt.Printf("\nProcess %s finished.\n> ", p.identifier)
+}
+
+func (p *Process) Identifier() string {
+	return p.identifier
+}
+
+func (p *Process) Command() string {
+	return p.command
 }
