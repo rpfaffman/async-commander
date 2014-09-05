@@ -9,8 +9,13 @@ Features to implement:
 ###Features 
  - Spawn different processes asynchronously (done)
  - Send input to a specific process (done)
- - Switch default process to send input to
- - Send signal to a specific process
+ - Switch default process to send input to (done)
+ - Send signal to a specific process (done)
  - Mute/unmute output from different processes
  - dotfile to configure aliases for commands
  - Color-code/flag output to clearly see which process it comes from
+ - Better display for input line (does not disappear when STDOUT is being used)
+
+###Current Issues
+ - Processes occasionally vanish from the list, even when they are still running.
+ - Input sent to another process is printed out a second time.
