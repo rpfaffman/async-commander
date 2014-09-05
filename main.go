@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/theelectricmiraclecat/async-commander/process"
@@ -38,11 +39,16 @@ func main() {
 			} else if head == "send" { // send input to pre-existing process
 				input = strings.Join(parts[2:], " ")
 				processManager.SendInput(parts[1], input)
+			} else if head == "kill" { // kill the specified process
+				processManager.Kill(parts[1])
+				printPrompt()
+			} else if head == "spawn" { // kill the specified process
+				processManager.Spawn(strings.Join(parts[1:], " "))
+				printPrompt()
 			} else { // regular command
 				runCommand(input)
 			}
 		}
-
 	}
 }
 
@@ -50,7 +56,11 @@ func runCommand(cmd string) {
 	if defaultProcess != "" && processManager.RetrieveProcess(defaultProcess) != nil {
 		processManager.SendInput(defaultProcess, cmd)
 	} else {
-		processManager.Spawn(cmd)
+		parts := strings.Fields(cmd)
+		process := exec.Command(parts[0], parts[1:]...)
+		process.Stdout, process.Stderr = os.Stdout, os.Stderr
+		process.Run()
+		printPrompt()
 	}
 }
 

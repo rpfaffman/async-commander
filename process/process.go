@@ -20,6 +20,26 @@ func NewProcessManager() *ProcessManager {
 	}
 }
 
+func (pm *ProcessManager) Kill(identifier string) {
+	pm.processes[identifier].Signal(os.Interrupt)
+}
+
+func (pm *ProcessManager) List() map[string]*Process {
+	return pm.processes
+}
+
+func (pm *ProcessManager) Remove(identifier string) {
+	delete(pm.processes, identifier)
+}
+
+func (pm *ProcessManager) RetrieveProcess(identifier string) *Process {
+	return pm.processes[identifier]
+}
+
+func (pm *ProcessManager) SendInput(identifier, command string) {
+	pm.processes[identifier].Input(fmt.Sprintf("%s\n", command))
+}
+
 func (pm *ProcessManager) Spawn(command string) *Process {
 	identifier := strconv.Itoa(len(pm.processes) + 1)
 	process := &Process{
@@ -34,28 +54,15 @@ func (pm *ProcessManager) Spawn(command string) *Process {
 	return process
 }
 
-func (pm *ProcessManager) Remove(identifier string) {
-	delete(pm.processes, identifier)
-}
-
-func (pm *ProcessManager) List() map[string]*Process {
-	return pm.processes
-}
-
-func (pm *ProcessManager) SendInput(identifier string, command string) {
-	pm.processes[identifier].Input(fmt.Sprintf("%s\n", command))
-}
-
-func (pm *ProcessManager) RetrieveProcess(identifier string) *Process {
-	return pm.processes[identifier]
-}
-
 // ===PROCESS CLASS===
 type Process struct {
 	identifier string
 	command    string
-	inputPipe  io.WriteCloser
 	manager    *ProcessManager
+
+	// assigned upon execution
+	process   *os.Process
+	inputPipe io.WriteCloser
 }
 
 func (p *Process) Execute() {
@@ -71,9 +78,18 @@ func (p *Process) Execute() {
 
 	go func() {
 		cmd.Start()
+		p.process = cmd.Process
 		cmd.Wait()
 		p.finish()
 	}()
+}
+
+func (p *Process) Command() string {
+	return p.command
+}
+
+func (p *Process) Identifier() string {
+	return p.identifier
 }
 
 func (p *Process) Input(input string) {
@@ -83,15 +99,11 @@ func (p *Process) Input(input string) {
 	}
 }
 
+func (p *Process) Signal(signal os.Signal) {
+	p.process.Signal(signal)
+}
+
 func (p *Process) finish() {
 	p.manager.Remove(p.identifier)
 	fmt.Printf("\nProcess %s finished.\n> ", p.identifier)
-}
-
-func (p *Process) Identifier() string {
-	return p.identifier
-}
-
-func (p *Process) Command() string {
-	return p.command
 }
